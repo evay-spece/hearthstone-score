@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="炉石记分">
+<link rel="manifest" href="manifest.json">
+<title>炉石双人记分</title>
+<style>
+:root{
+  --bg:#0b1220;--panel:#111827;--card:#172033;--border:#334155;
+  --text:#f8fafc;--muted:#94a3b8;--accent:#0a84ff;--accentbg:#102a56;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif}
+body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+main{max-width:420px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 6px) 8px calc(env(safe-area-inset-bottom) + 8px)}
+.top{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.scorecard{border:1px solid var(--border);background:var(--card);border-radius:14px;padding:6px 8px;text-align:center}
+.avatar{font-size:26px;line-height:1}
+.score{font-size:30px;font-weight:900;line-height:1.05;margin-top:3px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.col{display:flex;flex-direction:column;gap:5px;min-width:0}
+.choice{
+  min-height:38px;width:100%;border-radius:11px;border:1.2px solid var(--border);
+  background:var(--panel);color:var(--text);padding:6px 7px;text-align:left;
+  font-size:12.5px;font-weight:760;line-height:1.1;
+}
+.choice.selected{border-color:var(--accent);background:var(--accentbg);box-shadow:inset 0 0 0 1px var(--accent)}
+.choice.system{opacity:.95}
+.preview,.history,.share{margin-top:6px;border:1px solid var(--border);background:var(--panel);border-radius:13px;padding:9px}
+.resultline{font-size:15px;font-weight:850;line-height:1.42;word-break:break-all}
+.primary{
+  width:100%;min-height:42px;margin-top:7px;border:0;border-radius:12px;
+  background:var(--accent);color:white;font-size:15px;font-weight:900;
+}
+.toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+.secondary{min-height:38px;border:1px solid var(--border);border-radius:11px;background:var(--panel);color:var(--text);font-size:12px;font-weight:760}
+.muted{font-size:11px;color:var(--muted)}
+.sharebox{white-space:pre-wrap;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;font-size:14px;font-weight:800;line-height:1.35}
+.shareactions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.hidden{display:none}
+.history-item{padding-top:7px;margin-top:7px;border-top:1px solid var(--border);font-size:12px;line-height:1.35}
+.history-item:first-child{padding-top:0;margin-top:0;border-top:0}
+button:active{transform:scale(.985)}
+details summary{list-style:none;cursor:pointer;font-weight:800;font-size:12px}
+details summary::-webkit-details-marker{display:none}
+.fold-head{display:flex;justify-content:space-between;align-items:center}
+.fold-tag{font-size:11px;color:var(--muted)}
+input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+@media (orientation:landscape){
+  main{max-width:900px;padding-top:4px}
+  .grid{gap:7px}
+  .choice{min-height:34px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<main>
+<section class="top">
+  <div class="scorecard"><div class="avatar">🐸</div><div id="scoreA" class="score">-4</div></div>
+  <div class="scorecard"><div class="avatar">🐤</div><div id="scoreB" class="score">8</div></div>
+</section>
+
+<section class="grid">
+  <div class="col" id="colA">
+    <button type="button" class="choice" data-player="0" data-action="win">🐔 吃鸡 +1</button>
+    <button type="button" class="choice system" data-player="0" data-action="comeback">🚀 落后加分 +1</button>
+    <button type="button" class="choice" data-player="0" data-action="doubleWin">2️⃣ 双倍成功 +1</button>
+    <button type="button" class="choice" data-player="0" data-action="doubleFail">8️⃣ 双倍失败 -2</button>
+    <button type="button" class="choice" data-player="0" data-action="duel">⚔️ 发起决斗</button>
+    <button type="button" class="choice" data-player="0" data-action="kill">🪓 打死对面</button>
+    <button type="button" class="choice" data-player="0" data-action="finalKill">🪓🪓 决赛打死</button>
+  </div>
+  <div class="col" id="colB">
+    <button type="button" class="choice" data-player="1" data-action="win">🐔 吃鸡 +1</button>
+    <button type="button" class="choice system" data-player="1" data-action="comeback">🚀 落后加分 +1</button>
+    <button type="button" class="choice" data-player="1" data-action="doubleWin">2️⃣ 双倍成功 +1</button>
+    <button type="button" class="choice" data-player="1" data-action="doubleFail">8️⃣ 双倍失败 -2</button>
+    <button type="button" class="choice" data-player="1" data-action="duel">⚔️ 发起决斗</button>
+    <button type="button" class="choice" data-player="1" data-action="kill">🪓 打死对面</button>
+    <button type="button" class="choice" data-player="1" data-action="finalKill">🪓🪓 决赛打死</button>
+  </div>
+</section>
+
+<section class="preview">
+  <div id="preview"><span class="muted">点选本局情况后，这里会显示结算。</span></div>
+  <button id="confirm" class="primary">确认并复制</button>
+</section>
+
+
+
+<details id="share" class="share hidden">
+  <summary class="fold-head"><span>最近一次结算</span><span class="fold-tag">点开查看</span></summary>
+  <div id="shareText" class="sharebox" style="margin-top:8px"></div>
+  <div id="copyStatus" class="muted" style="margin-top:6px">已复制到剪贴板</div>
+</details>
+
+<section class="toolbar">
+  <button id="clear" class="secondary">清空本局</button>
+  <button id="undo" class="secondary">撤销上一局</button>
+  <button id="editScore" class="secondary">修改比分</button>
+</section>
+
+
+<section id="scoreEditor" class="share hidden">
+  <div style="font-weight:800;margin-bottom:6px;font-size:13px">手动修改当前比分</div>
+  <div class="shareactions">
+    <label style="display:block">
+      <div class="muted" style="margin-bottom:4px">🐸 当前分数</div>
+      <input id="editA" type="number" inputmode="numeric" step="1"
+        style="width:100%;min-height:38px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);padding:8px 10px;font-size:16px;font-weight:800;text-align:center">
+    </label>
+    <label style="display:block">
+      <div class="muted" style="margin-bottom:4px">🐤 当前分数</div>
+      <input id="editB" type="number" inputmode="numeric" step="1"
+        style="width:100%;min-height:38px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);padding:8px 10px;font-size:16px;font-weight:800;text-align:center">
+    </label>
+  </div>
+  <div class="shareactions">
+    <button id="saveScoreEdit" class="secondary">确认修改</button>
+    <button id="cancelScoreEdit" class="secondary">取消</button>
+  </div>
+  <div class="muted" style="margin-top:8px">只修改当前总分；之前的比赛记录会保留。</div>
+</section>
+
+<details class="history">
+  <summary class="fold-head"><span>比赛记录</span><span class="fold-tag">默认收起</span></summary>
+  <div id="history" style="margin-top:8px"></div>
+</details>
+</main>
+
+<script>
+(() => {
+ const BASE=[-4,8], KEY="hs-duo-score-ios-v2";
+ const defs=[
+  ["win","🐔 吃鸡 +1"],
+  ["comeback","🚀 落后加分 +1"],
+  ["doubleWin","2️⃣ 双倍成功 +1"],
+  ["doubleFail","8️⃣ 双倍失败 -2"],
+  ["duel","⚔️ 发起决斗"],
+  ["kill","🪓 打死对面"],
+  ["finalKill","🪓🪓 决赛打死"]
+ ];
+ let s={scores:BASE.slice(),history:[],selected:[{},{}],lastMessage:""};
+
+ function load(){
+   try{
+     const old=localStorage.getItem(KEY);
+     if(old){const x=JSON.parse(old); if(x&&Array.isArray(x.scores)) s={...s,...x};}
+   }catch(e){}
+ }
+ function save(){localStorage.setItem(KEY,JSON.stringify(s))}
+ function on(p,a){return !!s.selected[p][a]}
+ function setOn(p,a,v){s.selected[p][a]=!!v}
+ function winner(){if(on(0,"win"))return 0;if(on(1,"win"))return 1;return null}
+ function signed(n){return (n>=0?"+":"")+n}
+ function hasSelection(){
+   return [0,1].some(p=>Object.entries(s.selected[p]||{}).some(([k,v])=>k!=="comeback"&&v));
+ }
+ function syncComeback(){
+   for(let p=0;p<2;p++){
+     const o=p?0:1;
+     setOn(p,"comeback",on(p,"win")&&s.scores[p]<s.scores[o]);
+   }
+ }
+ function applyRules(p,a,next){
+   if(a==="comeback")return;
+   const o=p?0:1;
+   setOn(p,a,next);
+
+   if(a==="win"&&next){
+     setOn(p,"doubleFail",false);
+     setOn(o,"win",false);
+     setOn(o,"doubleWin",false);
+     setOn(o,"finalKill",false);
+   }
+   if(a==="win"&&!next){
+     setOn(p,"doubleWin",false);
+     setOn(p,"finalKill",false);
+   }
+   if(a==="doubleWin"&&next){
+     setOn(p,"win",true);
+     setOn(p,"doubleFail",false);
+     setOn(o,"win",false);
+     setOn(o,"doubleWin",false);
+     setOn(o,"finalKill",false);
+   }
+   if(a==="doubleFail"&&next){
+     setOn(p,"win",false);
+     setOn(p,"doubleWin",false);
+     setOn(p,"finalKill",false);
+   }
+   if(a==="kill"&&next){
+     setOn(p,"finalKill",false);
+     setOn(o,"kill",false);
+     setOn(o,"finalKill",false);
+     setOn(o,"win",false);
+     setOn(o,"doubleWin",false);
+   }
+   if(a==="finalKill"&&next){
+     setOn(p,"kill",false);
+     setOn(p,"doubleFail",false);
+     setOn(p,"win",true);
+     setOn(o,"win",false);
+     setOn(o,"doubleWin",false);
+     setOn(o,"doubleFail",false);
+     setOn(o,"kill",false);
+     setOn(o,"finalKill",false);
+   }
+   syncComeback(); save(); render();
+ }
+ function calc(){
+   syncComeback();
+   const delta=[0,0],emoji=["",""];
+   for(let p=0;p<2;p++){
+     if(on(p,"win")){delta[p]+=1;emoji[p]+="🐔"}
+     if(on(p,"comeback")){delta[p]+=1;emoji[p]+="🚀"}
+     if(on(p,"doubleWin")){delta[p]+=1;emoji[p]+="2️⃣"}
+     if(on(p,"doubleFail")){delta[p]-=2;emoji[p]+="8️⃣"}
+   }
+   for(let p=0;p<2;p++){
+     const o=p?0:1;
+     if(on(p,"kill")){delta[p]+=1;delta[o]-=1;emoji[p]+="🪓";emoji[o]+="☠️"}
+     if(on(p,"finalKill")){delta[p]+=2;delta[o]-=2;emoji[p]+="🪓🪓";emoji[o]+="☠️☠️"}
+   }
+   const w=winner();
+   const dc=(on(0,"duel")?1:0)+(on(1,"duel")?1:0);
+   if(w!==null&&dc>0){
+     const o=w?0:1;
+     delta[w]+=dc;delta[o]-=dc;
+     emoji[w]+="⚔️".repeat(dc);
+     emoji[o]+="☠️".repeat(dc);
+   }
+   return {delta,emoji};
+ }
+ function buildButtons(){
+   document.querySelectorAll(".choice[data-player][data-action]").forEach(b=>{
+     const p=+b.dataset.player,a=b.dataset.action;
+     b.classList.toggle("selected",on(p,a));
+     b.setAttribute("aria-pressed",on(p,a)?"true":"false");
+     if(!b.dataset.bound){
+       b.dataset.bound="1";
+       b.addEventListener("click",()=>applyRules(p,a,!on(p,a)));
+     }
+   });
+ }
+ function render(){
+   syncComeback();
+   document.getElementById("scoreA").textContent=s.scores[0];
+   document.getElementById("scoreB").textContent=s.scores[1];
+   buildButtons();
+
+   const c=calc(), pv=document.getElementById("preview");
+   if(!hasSelection()){
+     pv.innerHTML='<span class="muted">点选本局情况后，这里会显示结算。</span>';
+   }else{
+     const after=[s.scores[0]+c.delta[0],s.scores[1]+c.delta[1]];
+     pv.innerHTML=
+       `<div class="resultline">🐸：${c.emoji[0]||"—"}　${signed(c.delta[0])}=${after[0]}</div>`+
+       `<div class="resultline">🐤：${c.emoji[1]||"—"}　${signed(c.delta[1])}=${after[1]}</div>`;
+   }
+
+   const share=document.getElementById("share");
+   if(s.lastMessage){
+     share.classList.remove("hidden");
+     document.getElementById("shareText").textContent=s.lastMessage;
+   }else{
+     share.classList.add("hidden");
+     share.removeAttribute("open");
+   }
+
+   let html='<div class="history-item"><strong>历史分数</strong>　🐸 -4 ｜ 🐤 8</div>';
+   s.history.slice().reverse().forEach((x,i)=>{
+     const n=s.history.length-i;
+     html+=`<div class="history-item"><strong>第${n}局</strong>
+       <div>🐸：${x.emoji[0]||"—"}　${signed(x.delta[0])}=${x.after[0]}</div>
+       <div>🐤：${x.emoji[1]||"—"}　${signed(x.delta[1])}=${x.after[1]}</div>
+     </div>`;
+   });
+   document.getElementById("history").innerHTML=html;
+   save();
+ }
+ document.getElementById("confirm").addEventListener("click",async()=>{
+   if(!hasSelection())return;
+   const c=calc(), before=s.scores.slice();
+   const after=[before[0]+c.delta[0],before[1]+c.delta[1]];
+   const msg=`🐸：${c.emoji[0]||"—"}  ${signed(c.delta[0])}=${after[0]}
+🐤：${c.emoji[1]||"—"}  ${signed(c.delta[1])}=${after[1]}`;
+   s.scores=after.slice();
+   s.history.push({before,after:after.slice(),delta:c.delta.slice(),emoji:c.emoji.slice(),message:msg});
+   s.lastMessage=msg;
+   s.selected=[{},{}];
+   save();render();
+
+   const status=document.getElementById("copyStatus");
+   try{
+     await navigator.clipboard.writeText(msg);
+     if(status) status.textContent="已复制到剪贴板";
+   }catch(e){
+     if(status) status.textContent="复制失败，请长按上方结果复制";
+   }
+ });
+ document.getElementById("clear").addEventListener("click",()=>{s.selected=[{},{}];save();render()});
+ document.getElementById("undo").addEventListener("click",()=>{
+   const x=s.history.pop();if(!x)return;
+   s.scores=x.before.slice();
+   s.lastMessage=s.history.length?s.history[s.history.length-1].message:"";
+   save();render();
+ });
+ const scoreEditor=document.getElementById("scoreEditor");
+ document.getElementById("editScore").addEventListener("click",()=>{
+   document.getElementById("editA").value=s.scores[0];
+   document.getElementById("editB").value=s.scores[1];
+   scoreEditor.classList.remove("hidden");
+   setTimeout(()=>document.getElementById("editA").focus(),50);
+ });
+ document.getElementById("cancelScoreEdit").addEventListener("click",()=>{
+   scoreEditor.classList.add("hidden");
+ });
+ document.getElementById("saveScoreEdit").addEventListener("click",()=>{
+   const a=Number(document.getElementById("editA").value);
+   const b=Number(document.getElementById("editB").value);
+   if(!Number.isFinite(a)||!Number.isFinite(b)) return;
+   s.scores=[Math.trunc(a),Math.trunc(b)];
+   s.selected=[{},{}];
+   scoreEditor.classList.add("hidden");
+   save();render();
+ });
+
+ if("serviceWorker" in navigator){
+   window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+ }
+ load();render();
+})();
+</script>
+</body>
+</html>
