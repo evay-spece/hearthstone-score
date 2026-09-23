@@ -373,7 +373,12 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
  });
 
  if("serviceWorker" in navigator){
-   window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+   window.addEventListener("load",()=>{
+     navigator.serviceWorker
+       .register("./sw.js",{updateViaCache:"none"})
+       .then(registration=>registration.update())
+       .catch(()=>{});
+   });
  }
  load();render();
 })();
