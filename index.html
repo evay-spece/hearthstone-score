@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="炉石记分">
 <link rel="manifest" href="manifest.json">
-<title>炉石双人记分 v1.1.3</title>
+<title>炉石双人记分 v1.1.4</title>
 <style>
 :root{
   --bg:#0b1220;--panel:#111827;--card:#172033;--border:#334155;
@@ -292,9 +292,178 @@ html[data-theme="light"]{
   }
 }
 
+
+/* ===== v1.1.4：页面自身横竖屏，不依赖系统方向 ===== */
+html,body{width:100%;height:100%;overflow:hidden}
+body{position:relative}
+
+#appShell{
+  position:absolute;
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  overflow:auto;
+  background:var(--bg);
+  transform-origin:top left;
+}
+
+/* 物理屏幕为竖屏，但页面选择“横屏”：整个应用在页面内旋转 */
+html[data-layout="landscape"] #appShell{
+  width:100dvh;
+  height:100vw;
+  transform:translateX(100vw) rotate(90deg);
+  overflow:hidden;
+}
+
+/* 物理屏幕本身已经横屏时，横屏模式无需旋转 */
+@media (orientation:landscape){
+  html[data-layout="landscape"] #appShell{
+    width:100vw;
+    height:100dvh;
+    transform:none;
+  }
+}
+
+/* 物理屏幕为横屏，但页面选择“竖屏”：反向旋转成竖版 */
+@media (orientation:landscape){
+  html[data-layout="portrait"] #appShell{
+    width:100dvh;
+    height:100vw;
+    transform:translateY(100dvh) rotate(-90deg);
+    overflow:auto;
+  }
+}
+
+/* 页面选择横屏时，强制使用横屏三栏布局；不再看系统 orientation */
+html[data-layout="landscape"] main{
+  width:100%;
+  max-width:none;
+  height:100%;
+  margin:0;
+  padding-top:max(5px,env(safe-area-inset-top));
+  padding-bottom:max(5px,env(safe-area-inset-bottom));
+  padding-left:max(10px,env(safe-area-inset-left));
+  padding-right:max(10px,env(safe-area-inset-right));
+  display:grid;
+  grid-template-columns:minmax(165px,1fr) minmax(165px,1fr) minmax(285px,1.5fr);
+  grid-template-rows:68px 1fr auto auto;
+  grid-template-areas:
+    "scoreA scoreB result"
+    "opsA   opsB   result"
+    "opsA   opsB   tools"
+    "opsA   opsB   hist";
+  gap:6px;
+  overflow:hidden;
+}
+html[data-layout="landscape"] .top,
+html[data-layout="landscape"] .grid{display:contents}
+html[data-layout="landscape"] .top .scorecard:nth-child(1){grid-area:scoreA}
+html[data-layout="landscape"] .top .scorecard:nth-child(2){grid-area:scoreB}
+html[data-layout="landscape"] #colA{grid-area:opsA}
+html[data-layout="landscape"] #colB{grid-area:opsB}
+html[data-layout="landscape"] .scorecard{
+  margin:0;padding:5px 8px;border-radius:13px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+html[data-layout="landscape"] .avatar{font-size:25px}
+html[data-layout="landscape"] .score{font-size:31px;margin-top:2px}
+html[data-layout="landscape"] .col{gap:4px;min-height:0;justify-content:space-between}
+html[data-layout="landscape"] .choice{
+  min-height:0;height:calc((100% - 24px) / 7);
+  padding:4px 8px;border-radius:9px;font-size:11.5px;line-height:1.05;
+  display:flex;align-items:center;
+}
+html[data-layout="landscape"] .preview{
+  grid-area:result;margin:0;padding:10px 10px 9px;border-radius:15px;
+  display:flex;flex-direction:column;justify-content:flex-start;min-height:0;
+}
+html[data-layout="landscape"] #preview{
+  min-height:66px;display:flex;flex-direction:column;justify-content:center;
+  padding:2px 2px 5px;
+}
+html[data-layout="landscape"] .resultline{font-size:15px;line-height:1.38}
+html[data-layout="landscape"] .primary{
+  min-height:54px;margin-top:7px;border-radius:13px;font-size:17px;
+}
+html[data-layout="landscape"] .toolbar{grid-area:tools;margin:0;gap:5px}
+html[data-layout="landscape"] .secondary{
+  min-height:42px;border-radius:11px;font-size:11px;padding:3px 4px;
+}
+html[data-layout="landscape"] .history{
+  grid-area:hist;margin:0;padding:0;border-radius:13px;overflow:hidden;align-self:end;
+}
+html[data-layout="landscape"] .history summary{
+  min-height:44px;padding:0 10px;display:flex;align-items:center;
+}
+html[data-layout="landscape"] .history[open]{
+  max-height:118px;overflow:auto;padding-bottom:7px;
+}
+html[data-layout="landscape"] .history[open] #history{
+  padding:0 9px 7px;margin-top:0 !important;
+}
+html[data-layout="landscape"] #share{display:none !important}
+html[data-layout="landscape"] #scoreEditor{
+  grid-area:result;z-index:10;margin:0;align-self:start;max-height:100%;
+  overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
+html[data-layout="landscape"] .shareactions{gap:5px;margin-top:5px}
+html[data-layout="landscape"] .muted{font-size:10px}
+
+/* 页面选择竖屏时，强制使用原来的竖版布局 */
+html[data-layout="portrait"] main{
+  max-width:420px;
+  height:auto;
+  min-height:100%;
+  margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 6px) 8px calc(env(safe-area-inset-bottom) + 8px);
+  display:block;
+  overflow:auto;
+}
+html[data-layout="portrait"] .top{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+html[data-layout="portrait"] .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+html[data-layout="portrait"] .col{display:flex;flex-direction:column;gap:5px}
+html[data-layout="portrait"] .scorecard{padding:6px 8px;border-radius:14px}
+html[data-layout="portrait"] .avatar{font-size:26px}
+html[data-layout="portrait"] .score{font-size:30px;margin-top:3px}
+html[data-layout="portrait"] .choice{
+  min-height:38px;height:auto;padding:6px 7px;border-radius:11px;font-size:12.5px;
+}
+html[data-layout="portrait"] .preview,
+html[data-layout="portrait"] .history,
+html[data-layout="portrait"] .share{margin-top:6px;padding:9px}
+html[data-layout="portrait"] .preview{display:block}
+html[data-layout="portrait"] #preview{min-height:0;display:block;padding:0}
+html[data-layout="portrait"] .resultline{font-size:15px;line-height:1.42}
+html[data-layout="portrait"] .primary{min-height:42px;margin-top:7px;font-size:15px}
+html[data-layout="portrait"] .toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+html[data-layout="portrait"] .secondary{min-height:38px;font-size:12px;padding:0}
+html[data-layout="portrait"] #share{display:block}
+html[data-layout="portrait"] #share.hidden{display:none}
+html[data-layout="portrait"] #scoreEditor{position:static;max-height:none;box-shadow:none}
+
+/* 控制按钮跟着页面一起旋转，始终在页面右上角 */
+#appShell .theme-toggle,
+#appShell .orientation-toggle{
+  position:absolute;
+}
+#appShell .theme-toggle{
+  top:max(7px,env(safe-area-inset-top));
+  right:max(8px,env(safe-area-inset-right));
+}
+#appShell .orientation-toggle{
+  top:max(7px,env(safe-area-inset-top));
+  right:max(48px,calc(env(safe-area-inset-right) + 40px));
+}
+#appShell .version-badge{
+  position:absolute;
+  right:max(8px,env(safe-area-inset-right));
+  bottom:max(6px,env(safe-area-inset-bottom));
+}
+
 </style>
 </head>
 <body>
+<div id="appShell">
 <main>
 <section class="top">
   <div class="scorecard"><div class="avatar">🐸</div><div id="scoreA" class="score">-4</div></div>
@@ -370,7 +539,9 @@ html[data-theme="light"]{
 </main>
 <button id="orientationToggle" class="orientation-toggle" type="button" aria-label="切换横竖屏">横屏</button>
 <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换浅色深色模式">☀️</button>
-<div class="version-badge">v1.1.3</div>
+<div class="version-badge">v1.1.4</div>
+
+</div>
 
 <script>
 (() => {
@@ -397,19 +568,15 @@ html[data-theme="light"]{
    try{localStorage.setItem(THEME_KEY,next)}catch(e){}
  });
 
- async function requestOrientation(mode){
-   const btn=document.getElementById("orientationToggle");
-   if(btn) btn.textContent=mode==="landscape"?"横屏":"竖屏";
-   try{localStorage.setItem(ORIENTATION_KEY,mode)}catch(e){}
 
-   // 支持 Screen Orientation API 的浏览器 / 已安装 PWA 会真正尝试旋转屏幕。
-   try{
-     if(screen.orientation && screen.orientation.lock){
-       await screen.orientation.lock(mode==="landscape"?"landscape":"portrait");
-     }
-   }catch(e){
-     // iOS Safari 某些版本不允许网页主动锁定方向，按钮仍保留偏好状态。
+ function applyLayout(mode){
+   document.documentElement.dataset.layout=mode;
+   const btn=document.getElementById("orientationToggle");
+   if(btn){
+     btn.textContent=mode==="landscape"?"横屏":"竖屏";
+     btn.setAttribute("aria-label",mode==="landscape"?"切换到竖屏布局":"切换到横屏布局");
    }
+   try{localStorage.setItem(ORIENTATION_KEY,mode)}catch(e){}
  }
 
  let orientationMode="landscape";
@@ -419,11 +586,11 @@ html[data-theme="light"]{
      orientationMode=savedOrientation;
    }
  }catch(e){}
- requestOrientation(orientationMode);
+ applyLayout(orientationMode);
 
- document.getElementById("orientationToggle").addEventListener("click",async()=>{
+ document.getElementById("orientationToggle").addEventListener("click",()=>{
    orientationMode=orientationMode==="landscape"?"portrait":"landscape";
-   await requestOrientation(orientationMode);
+   applyLayout(orientationMode);
  });
 
  const defs=[
