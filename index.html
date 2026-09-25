@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="炉石记分">
 <link rel="manifest" href="manifest.json">
-<title>炉石双人记分</title>
+<title>炉石双人记分 v1.1.0</title>
 <style>
 :root{
   --bg:#0b1220;--panel:#111827;--card:#172033;--border:#334155;
@@ -53,50 +53,173 @@ details summary::-webkit-details-marker{display:none}
 input[type="number"]{-moz-appearance:textfield;appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 @media (orientation:landscape) and (max-height:500px){
-  html,body{height:100%;overflow:hidden}
-  main{
-    max-width:none;
+  html,body{
     width:100%;
-    height:100dvh;
-    margin:0;
-    padding-top:max(4px,env(safe-area-inset-top));
-    padding-bottom:max(4px,env(safe-area-inset-bottom));
-    padding-left:max(8px,env(safe-area-inset-left));
-    padding-right:max(8px,env(safe-area-inset-right));
-    display:grid;
-    grid-template-columns:minmax(150px,1fr) minmax(190px,.95fr) minmax(150px,1fr);
-    grid-template-rows:auto auto auto 1fr;
-    grid-template-areas:
-      "frog top chick"
-      "frog preview chick"
-      "frog toolbar chick"
-      "frog extras chick";
-    column-gap:7px;
-    row-gap:5px;
+    height:100%;
     overflow:hidden;
   }
-  .grid{display:contents}
-  #colA{grid-area:frog;min-width:0}
-  #colB{grid-area:chick;min-width:0}
-  .top{grid-area:top;margin:0;gap:5px}
-  .preview{grid-area:preview;margin:0;padding:7px}
-  .toolbar{grid-area:toolbar;margin:0;gap:5px}
-  #share,#scoreEditor,.history{grid-area:extras;margin-top:0;align-self:start}
-  .scorecard{padding:4px 6px;border-radius:10px}
-  .avatar{font-size:20px}
-  .score{font-size:24px;margin-top:2px}
-  .col{gap:4px}
-  .choice{min-height:34px;padding:5px 6px;font-size:11.5px;border-radius:9px}
-  .resultline{font-size:13px;line-height:1.28}
-  .primary{min-height:36px;margin-top:5px;font-size:13px;border-radius:10px}
-  .secondary{min-height:34px;font-size:10.5px;border-radius:9px;padding:3px}
-  .share,.history{padding:7px}
-  .sharebox{font-size:12px;padding:6px}
+
+  main{
+    width:100%;
+    max-width:none;
+    height:100dvh;
+    margin:0;
+    padding-top:max(5px,env(safe-area-inset-top));
+    padding-bottom:max(5px,env(safe-area-inset-bottom));
+    padding-left:max(10px,env(safe-area-inset-left));
+    padding-right:max(10px,env(safe-area-inset-right));
+    display:grid;
+    grid-template-columns:minmax(165px,1fr) minmax(165px,1fr) minmax(285px,1.5fr);
+    grid-template-rows:68px 1fr auto auto;
+    grid-template-areas:
+      "scoreA scoreB result"
+      "opsA   opsB   result"
+      "opsA   opsB   tools"
+      "opsA   opsB   hist";
+    gap:6px;
+    overflow:hidden;
+  }
+
+  /* 拆开原来的双分数卡和双操作区，让它们直接进入横屏主网格 */
+  .top,.grid{display:contents}
+
+  .top .scorecard:nth-child(1){grid-area:scoreA}
+  .top .scorecard:nth-child(2){grid-area:scoreB}
+  #colA{grid-area:opsA}
+  #colB{grid-area:opsB}
+
+  .scorecard{
+    margin:0;
+    padding:5px 8px;
+    border-radius:13px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .avatar{font-size:25px}
+  .score{font-size:31px;margin-top:2px}
+
+  .col{
+    gap:4px;
+    min-height:0;
+    justify-content:space-between;
+  }
+  .choice{
+    min-height:0;
+    height:calc((100% - 24px) / 7);
+    padding:4px 8px;
+    border-radius:9px;
+    font-size:11.5px;
+    line-height:1.05;
+    display:flex;
+    align-items:center;
+  }
+
+  .preview{
+    grid-area:result;
+    margin:0;
+    padding:10px 10px 9px;
+    border-radius:15px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    min-height:0;
+  }
+  #preview{
+    min-height:66px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:2px 2px 5px;
+  }
+  .resultline{
+    font-size:15px;
+    line-height:1.38;
+    font-weight:900;
+  }
+  .primary{
+    min-height:54px;
+    margin-top:7px;
+    border-radius:13px;
+    font-size:17px;
+  }
+
+  .toolbar{
+    grid-area:tools;
+    margin:0;
+    gap:5px;
+  }
+  .secondary{
+    min-height:42px;
+    border-radius:11px;
+    font-size:11px;
+    padding:3px 4px;
+  }
+
+  .history{
+    grid-area:hist;
+    margin:0;
+    padding:0;
+    border-radius:13px;
+    overflow:hidden;
+    align-self:end;
+  }
+  .history summary{
+    min-height:44px;
+    padding:0 10px;
+    display:flex;
+    align-items:center;
+  }
+  .history[open]{
+    max-height:118px;
+    overflow:auto;
+    padding-bottom:7px;
+  }
+  .history[open] #history{
+    padding:0 9px 7px;
+    margin-top:0 !important;
+  }
+
+  /* 横屏按截图隐藏“最近一次结算”，当前结果直接看上面的结算卡 */
+  #share{display:none !important}
+
+  /* 修改比分时在右侧覆盖显示，不挤乱两边操作区 */
+  #scoreEditor{
+    grid-area:result;
+    z-index:10;
+    margin:0;
+    align-self:start;
+    max-height:100%;
+    overflow:auto;
+    box-shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+
+  .shareactions{gap:5px;margin-top:5px}
   .muted{font-size:10px}
-  .history{max-height:92px;overflow:auto}
-  #share{max-height:92px;overflow:auto}
-  #scoreEditor{max-height:150px;overflow:auto}
 }
+
+.version-badge{
+  position:fixed;
+  right:max(8px,env(safe-area-inset-right));
+  bottom:max(6px,env(safe-area-inset-bottom));
+  z-index:50;
+  font-size:10px;
+  line-height:1;
+  color:var(--muted);
+  opacity:.72;
+  pointer-events:none;
+  font-variant-numeric:tabular-nums;
+}
+@media (orientation:landscape) and (max-height:500px){
+  .version-badge{
+    right:max(10px,env(safe-area-inset-right));
+    bottom:max(5px,env(safe-area-inset-bottom));
+    font-size:9px;
+    opacity:.66;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -173,6 +296,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   <div id="history" style="margin-top:8px"></div>
 </details>
 </main>
+<div class="version-badge">v1.1.0</div>
 
 <script>
 (() => {
@@ -373,12 +497,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
  });
 
  if("serviceWorker" in navigator){
-   window.addEventListener("load",()=>{
-     navigator.serviceWorker
-       .register("./sw.js",{updateViaCache:"none"})
-       .then(registration=>registration.update())
-       .catch(()=>{});
-   });
+   window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
  }
  load();render();
 })();
