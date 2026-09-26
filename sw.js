@@ -1,39 +1,5 @@
-const CACHE_NAME = "hs-score-v1-1-5";
-const APP_SHELL = ["./", "./index.html", "./manifest.json"];
-
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(key => key.startsWith("hs-score-") && key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", event => {
-  const request = event.request;
-  const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin) return;
-
-  event.respondWith(
-    fetch(request, {cache:"no-store"})
-      .then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, copy)));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request).then(cached => cached || caches.match("./index.html")))
-  );
-});
+const CACHE_NAME = "hs-score-v1-2-0";
+const APP_SHELL = ["./","./index.html","./manifest.json","./icon-180.png","./icon-192.png","./icon-512.png"];
+self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)))});
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener("fetch",e=>{const r=e.request,u=new URL(r.url);if(r.method!=="GET"||u.origin!==self.location.origin)return;e.respondWith(fetch(r,{cache:"no-store"}).then(resp=>{if(resp.ok){const cp=resp.clone();e.waitUntil(caches.open(CACHE_NAME).then(c=>c.put(r,cp)))}return resp}).catch(()=>caches.match(r).then(c=>c||caches.match("./index.html"))))});

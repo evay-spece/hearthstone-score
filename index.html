@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#0b1220">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="炉石记分">
 <link rel="manifest" href="manifest.json">
-<title>炉石双人记分 v1.1.5</title>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>炉石双人记分 v1.2.0</title>
 <style>
 :root{
   --bg:#0b1220;--panel:#111827;--card:#172033;--border:#334155;
@@ -222,39 +226,6 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 }
 
 
-
-
-.orientation-toggle{
-  position:fixed;
-  top:max(7px,env(safe-area-inset-top));
-  right:max(48px,calc(env(safe-area-inset-right) + 40px));
-  z-index:60;
-  min-width:44px;
-  height:34px;
-  padding:0 8px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:var(--panel);
-  color:var(--text);
-  font-size:14px;
-  line-height:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 2px 8px rgba(0,0,0,.12);
-}
-@media (orientation:landscape) and (max-height:500px){
-  .orientation-toggle{
-    top:max(5px,env(safe-area-inset-top));
-    right:max(46px,calc(env(safe-area-inset-right) + 38px));
-    height:30px;
-    min-width:40px;
-    padding:0 7px;
-    font-size:12px;
-  }
-}
-
-
 @media (prefers-color-scheme: light){
   :root{
     --bg:#f4f6f8;
@@ -268,6 +239,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   }
 }
 
+
+.toast{position:fixed;left:50%;top:50%;z-index:1000;transform:translate(-50%,-50%) scale(.96);padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:rgba(17,24,39,.94);color:#fff;font-size:14px;line-height:1.2;opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease;box-shadow:0 8px 30px rgba(0,0,0,.28)}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.toast.error{background:rgba(127,29,29,.95)}
+@media (prefers-color-scheme: light){.toast{background:rgba(255,255,255,.97);color:#111827}.toast.error{background:rgba(254,226,226,.98);color:#991b1b}}
 </style>
 </head>
 <body>
@@ -313,7 +289,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 
 <section class="toolbar">
   <button id="clear" class="secondary">清空本局</button>
-  <button id="undo" class="secondary">撤销上一局</button>
+  <button id="undo" class="secondary">撤销上一步</button>
   <button id="editScore" class="secondary">修改比分</button>
 </section>
 
@@ -336,7 +312,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
     <button id="saveScoreEdit" class="secondary">确认修改</button>
     <button id="cancelScoreEdit" class="secondary">取消</button>
   </div>
-  <div class="muted" style="margin-top:8px">只修改当前总分；之前的比赛记录会保留。</div>
+  <div class="muted" style="margin-top:8px">修改会写入比赛记录，并且可以用“撤销上一步”恢复。</div>
 </section>
 
 <details class="history">
@@ -344,42 +320,12 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   <div id="history" style="margin-top:8px"></div>
 </details>
 </main>
-<button id="orientationToggle" class="orientation-toggle" type="button" aria-label="切换横竖屏">横屏</button>
-<div class="version-badge">v1.1.5</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div class="version-badge">v1.2.0</div>
 
 <script>
 (() => {
- const BASE=[-4,8], KEY="hs-duo-score-ios-v2", ORIENTATION_KEY="hs-duo-orientation";
-
-
- async function requestOrientation(mode){
-   const btn=document.getElementById("orientationToggle");
-   if(btn) btn.textContent=mode==="landscape"?"横屏":"竖屏";
-   try{localStorage.setItem(ORIENTATION_KEY,mode)}catch(e){}
-
-   // 支持 Screen Orientation API 的浏览器 / 已安装 PWA 会真正尝试旋转屏幕。
-   try{
-     if(screen.orientation && screen.orientation.lock){
-       await screen.orientation.lock(mode==="landscape"?"landscape":"portrait");
-     }
-   }catch(e){
-     // iOS Safari 某些版本不允许网页主动锁定方向，按钮仍保留偏好状态。
-   }
- }
-
- let orientationMode="landscape";
- try{
-   const savedOrientation=localStorage.getItem(ORIENTATION_KEY);
-   if(savedOrientation==="portrait"||savedOrientation==="landscape"){
-     orientationMode=savedOrientation;
-   }
- }catch(e){}
- requestOrientation(orientationMode);
-
- document.getElementById("orientationToggle").addEventListener("click",async()=>{
-   orientationMode=orientationMode==="landscape"?"portrait":"landscape";
-   await requestOrientation(orientationMode);
- });
+ const BASE=[-4,8], KEY="hs-duo-score-ios-v2";
 
  const defs=[
   ["win","🐔 吃鸡 +1"],
@@ -404,6 +350,23 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
  function winner(){if(on(0,"win"))return 0;if(on(1,"win"))return 1;return null}
  function signed(n){return (n>=0?"+":"")+n}
  function resultText(emoji,delta,score){return delta===0?`=${score}`:`${emoji||"—"}　${signed(delta)}=${score}`}
+ function timeLabel(ts){
+   if(!ts)return "";
+   const d=new Date(ts),pad=n=>String(n).padStart(2,"0");
+   return `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+ }
+ function latestRoundMessage(){
+   for(let i=s.history.length-1;i>=0;i--){const x=s.history[i];if(x.type!=="edit"&&x.message)return x.message;}
+   return "";
+ }
+ let toastTimer=null;
+ function showToast(text,isError=false){
+   const el=document.getElementById("toast");if(!el)return;clearTimeout(toastTimer);el.textContent=text;el.classList.toggle("error",!!isError);el.classList.add("show");toastTimer=setTimeout(()=>el.classList.remove("show"),1100);
+ }
+ async function copyText(text){
+   try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);return true;}}catch(e){}
+   try{const ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);const ok=document.execCommand("copy");ta.remove();return !!ok;}catch(e){return false;}
+ }
  function hasSelection(){
    return [0,1].some(p=>Object.entries(s.selected[p]||{}).some(([k,v])=>k!=="comeback"&&v));
  }
@@ -439,6 +402,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
      setOn(p,"win",false);
      setOn(p,"doubleWin",false);
      setOn(p,"finalKill",false);
+     setOn(o,"finalKill",false);
    }
    if(a==="kill"&&next){
      setOn(p,"finalKill",false);
@@ -520,12 +484,21 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
    }
 
    let html='<div class="history-item"><strong>历史分数</strong>　🐸 -4 ｜ 🐤 8</div>';
-   s.history.slice().reverse().forEach((x,i)=>{
-     const n=s.history.length-i;
-     html+=`<div class="history-item"><strong>第${n}局</strong>
-       <div>🐸：${resultText(x.emoji[0],x.delta[0],x.after[0])}</div>
-       <div>🐤：${resultText(x.emoji[1],x.delta[1],x.after[1])}</div>
-     </div>`;
+   let roundNo=0;
+   const entries=s.history.map(x=>({x,roundNo:x.type==="edit"?null:++roundNo})).reverse();
+   entries.forEach(({x,roundNo})=>{
+     const t=timeLabel(x.time);
+     if(x.type==="edit"){
+       const changes=[];
+       if(x.before?.[0]!==x.after?.[0]) changes.push(`<div>🐸：${x.before[0]} → ${x.after[0]}</div>`);
+       if(x.before?.[1]!==x.after?.[1]) changes.push(`<div>🐤：${x.before[1]} → ${x.after[1]}</div>`);
+       html+=`<div class="history-item"><strong>比分修正${t?` · ${t}`:""}</strong>${changes.join("")}</div>`;
+     }else{
+       html+=`<div class="history-item"><strong>第${roundNo}局${t?` · ${t}`:""}</strong>
+         <div>🐸：${resultText(x.emoji?.[0]||"",x.delta?.[0]||0,x.after[0])}</div>
+         <div>🐤：${resultText(x.emoji?.[1]||"",x.delta?.[1]||0,x.after[1])}</div>
+       </div>`;
+     }
    });
    document.getElementById("history").innerHTML=html;
    save();
@@ -537,25 +510,30 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
    const msg=`🐸：${resultText(c.emoji[0],c.delta[0],after[0])}
 🐤：${resultText(c.emoji[1],c.delta[1],after[1])}`;
    s.scores=after.slice();
-   s.history.push({before,after:after.slice(),delta:c.delta.slice(),emoji:c.emoji.slice(),message:msg});
+   s.history.push({type:"round",time:Date.now(),before,after:after.slice(),delta:c.delta.slice(),emoji:c.emoji.slice(),message:msg});
    s.lastMessage=msg;
    s.selected=[{},{}];
    save();render();
 
    const status=document.getElementById("copyStatus");
-   try{
-     await navigator.clipboard.writeText(msg);
+   const copied=await copyText(msg);
+   if(copied){
      if(status) status.textContent="已复制到剪贴板";
-   }catch(e){
+     showToast("✓ 已复制");
+   }else{
      if(status) status.textContent="复制失败，请长按上方结果复制";
+     showToast("复制失败",true);
    }
  });
  document.getElementById("clear").addEventListener("click",()=>{s.selected=[{},{}];save();render()});
  document.getElementById("undo").addEventListener("click",()=>{
-   const x=s.history.pop();if(!x)return;
+   const x=s.history.pop();
+   if(!x){showToast("没有可撤销的记录");return;}
    s.scores=x.before.slice();
-   s.lastMessage=s.history.length?s.history[s.history.length-1].message:"";
+   s.selected=[{},{}];
+   s.lastMessage=latestRoundMessage();
    save();render();
+   showToast(x.type==="edit"?"已撤销比分修改":"已撤销上一局");
  });
  const scoreEditor=document.getElementById("scoreEditor");
  document.getElementById("editScore").addEventListener("click",()=>{
@@ -570,16 +548,20 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
  document.getElementById("saveScoreEdit").addEventListener("click",()=>{
    const rawA=document.getElementById("editA").value.trim();
    const rawB=document.getElementById("editB").value.trim();
-   if(!/^-?\d+$/.test(rawA)||!/^-?\d+$/.test(rawB)) return;
+   if(!/^-?\d+$/.test(rawA)||!/^-?\d+$/.test(rawB)){showToast("请输入整数比分",true);return;}
    const a=parseInt(rawA,10), b=parseInt(rawB,10);
-   s.scores=[a,b];
+   const before=s.scores.slice(), after=[a,b];
+   if(before[0]===after[0]&&before[1]===after[1]){scoreEditor.classList.add("hidden");showToast("比分没有变化");return;}
+   s.scores=after.slice();
+   s.history.push({type:"edit",time:Date.now(),before,after:after.slice()});
    s.selected=[{},{}];
    scoreEditor.classList.add("hidden");
    save();render();
+   showToast("比分已修改");
  });
 
  if("serviceWorker" in navigator){
-   window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+   window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));
  }
  load();render();
 })();
