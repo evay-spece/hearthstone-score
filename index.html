@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<title>炉石双人记分 v1.2.0</title>
+<title>炉石双人记分 v1.2.1</title>
 <style>
 :root{
   --bg:#0b1220;--panel:#111827;--card:#172033;--border:#334155;
@@ -321,7 +321,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 </details>
 </main>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<div class="version-badge">v1.2.0</div>
+<div class="version-badge">v1.2.1</div>
 
 <script>
 (() => {
@@ -366,6 +366,10 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
  async function copyText(text){
    try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);return true;}}catch(e){}
    try{const ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);const ok=document.execCommand("copy");ta.remove();return !!ok;}catch(e){return false;}
+ }
+ function runHearthstoneShortcut(){
+   const shortcutName="炉石记分";
+   window.location.href=`shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}`;
  }
  function hasSelection(){
    return [0,1].some(p=>Object.entries(s.selected[p]||{}).some(([k,v])=>k!=="comeback"&&v));
@@ -519,7 +523,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
    const copied=await copyText(msg);
    if(copied){
      if(status) status.textContent="已复制到剪贴板";
-     showToast("✓ 已复制");
+     showToast("✓ 已复制，正在打开快捷指令");
+     setTimeout(runHearthstoneShortcut,120);
    }else{
      if(status) status.textContent="复制失败，请长按上方结果复制";
      showToast("复制失败",true);
