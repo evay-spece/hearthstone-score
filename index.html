@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<title>炉石双人记分 v1.2.2</title>
+<title>炉石双人记分 v1.2.3</title>
 <style>
 :root{
   --bg:#0b1220;--panel:#111827;--card:#172033;--border:#334155;
@@ -244,6 +244,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .toast.error{background:rgba(127,29,29,.95)}
 @media (prefers-color-scheme: light){.toast{background:rgba(255,255,255,.97);color:#111827}.toast.error{background:rgba(254,226,226,.98);color:#991b1b}}
+/* 新比赛按钮独占工具区第二行 */
+.toolbar .reset-match{grid-column:1/-1;min-height:34px;margin-top:2px;background:var(--panel);color:var(--text);border:1px solid var(--border)}
+@media (orientation:landscape) and (max-height:500px){.toolbar .reset-match{min-height:29px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -291,8 +294,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   <button id="clear" class="secondary">清空本局</button>
   <button id="undo" class="secondary">撤销上一步</button>
   <button id="editScore" class="secondary">修改比分</button>
+  <button id="resetMatch" class="secondary reset-match">🏁 新比赛（分数归零）</button>
 </section>
-
 
 <section id="scoreEditor" class="share hidden">
   <div style="font-weight:400;margin-bottom:6px;font-size:13px">手动修改当前比分</div>
@@ -321,7 +324,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 </details>
 </main>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<div class="version-badge">v1.2.2</div>
+<div class="version-badge">v1.2.3</div>
 
 <script>
 (() => {
@@ -336,7 +339,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   ["kill","🪓 打死对面"],
   ["finalKill","🪓🪓 决赛打死"]
  ];
- let s={scores:BASE.slice(),history:[],selected:[{},{}],lastMessage:""};
+ let s={scores:BASE.slice(),history:[],selected:[{},{}],lastMessage:"",startScores:BASE.slice()};
 
  function load(){
    try{
@@ -487,7 +490,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
      share.removeAttribute("open");
    }
 
-   let html='<div class="history-item"><strong>历史分数</strong>　🐸 -4 ｜ 🐤 8</div>';
+   let html=`<div class="history-item"><strong>本场起始分数</strong>　🐸 ${s.startScores?.[0]??BASE[0]} ｜ 🐤 ${s.startScores?.[1]??BASE[1]}</div>`;
    let roundNo=0;
    const entries=s.history.map(x=>({x,roundNo:x.type==="edit"?null:++roundNo})).reverse();
    entries.forEach(({x,roundNo})=>{
@@ -530,6 +533,17 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
      showToast("复制失败",true);
    }
  });
+  document.getElementById("resetMatch").addEventListener("click",()=>{
+    if(!confirm("结束当前比赛并开始新比赛？\n\n🐸 和 🐤 分数都将归零，本场记录会归档。此操作不能用“撤销上一步”恢复。"))return;
+    try{
+      const key="hs-duo-match-archive-v1";
+      const archive=JSON.parse(localStorage.getItem(key)||"[]");
+      archive.push({endedAt:Date.now(),scores:s.scores.slice(),startScores:(s.startScores||BASE).slice(),history:s.history.slice()});
+      localStorage.setItem(key,JSON.stringify(archive));
+    }catch(e){showToast("归档失败，未重置",true);return;}
+    s.scores=[0,0];s.startScores=[0,0];s.history=[];s.selected=[{},{}];s.lastMessage="";
+    save();render();showToast("新比赛开始 · 0 : 0");
+  });
  document.getElementById("clear").addEventListener("click",()=>{s.selected=[{},{}];save();render()});
  document.getElementById("undo").addEventListener("click",()=>{
    const x=s.history.pop();
